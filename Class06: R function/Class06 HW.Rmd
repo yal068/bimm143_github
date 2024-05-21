@@ -1,0 +1,45 @@
+---
+title: "Class06 HW"
+author: "Yang"
+date: "2024-04-20"
+output:
+  pdf_document: default
+  pdf: default
+---
+
+## Load library 
+
+```{r}
+
+library(bio3d)
+
+```
+
+
+## Function to read and process PDB structure
+
+```{r cars}
+process_pdb <- function(pdb_id) {
+  pdb <- read.pdb(pdb_id)
+  # Trim PDB to chain A and CA atoms only
+    chainA <- trim.pdb(pdb, chain = "A", elety = "CA")
+    # Extract B-factors for CA atoms
+    b_factors <- chainA$atom$b
+    # Return plot
+    plotb3(b_factors, sse=chainA, typ="l", ylab="Bfactor") 
+}
+```
+
+## Plots Genereation with input to test function process_pdb
+
+
+```{r}
+process_pdb("4AKE")
+process_pdb("1AKE")
+process_pdb("1E4Y")
+```
+
+```{r}
+
+```
+

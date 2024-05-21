@@ -1,0 +1,217 @@
+---
+title: "Class07: Matchine Learning 1"
+author: "Yang Liu"
+format: pdf
+editor: visual
+---
+
+## 
+
+Today we will start out multi-part exploration of some key machine learning methods. We will begin with clustering\--finding groupings in data, and then dimensionality reduction.
+
+##Clustering
+
+Let's start with "k-means" clustering
+
+The main function in base R for this 'kmeans()'.
+
+```{r}
+#make up some data
+hist(rnorm(100000, mean=3))
+```
+
+```{r}
+tmp <- c(rnorm(30, -3), rnorm(30, +3))
+x <- cbind(x=tmp, y=rev(tmp))
+plot(x)
+```
+
+Now let's try out 'kmeans()'
+
+```{r}
+km <- kmeans(x, centers=2)
+km
+```
+```{r}
+attributes(km)
+```
+
+
+> Q. How many points in each cluster?
+
+```{r}
+km$size
+```
+
+> Q. What component of your result object details cluster assignment/membership?
+
+```{r}
+km$cluster
+```
+
+
+> Q. what are centers/mean values of each cluster?
+
+```{r}
+km$centers
+```
+
+
+> Q. Make a plot of your data showing your clustering results (grouping/clusters and cluster cneters). 
+
+```{r}
+plot(x, col=c("red","blue"))
+```
+
+```{r}
+c(1:5) + c(100, 1)
+```
+```{r}
+plot(x, col=c(1,2))
+```
+
+```{r}
+plot(x, col=km$cluster)
+points(km$centers, col="green", pch=15, cex=3)
+```
+> Q. Run 'kmeans' again and cluster in 4 groups and plot the results.
+
+```{r}
+km4 <- kmeans(x, centers=4)
+km4
+```
+
+```{r}
+plot(x, col=km4$cluster)
+points(km4$centers, col="green", pch=15, cex=3)
+```
+
+##Hierarchical Clustering
+
+This form of clustering aims to reveal the structure in your data by progressively grouping points into a ever smaller number of clusters.
+
+The main fucntion in base R for this called 'hclust()' This function does not take out input data directiely but wants a "distance matrix" that details how (dis)similar all our inout points are to each otehr.
+
+```{r}
+hc <- hclust(dist(x))
+hc
+```
+
+The print out above is not very useful (unlick that from kmeans) but there is a useful 'plot()' mehtod.
+```{r}
+plot(hc)
+abline(h=10, col="red")
+```
+To get my main result (My cluster membership vector) I need to "cut" my tree using the function 'cutree()'
+
+```{r}
+grps <- cutree(hc, h=10)
+grps
+```
+
+```{r}
+plot(x, col=grps)
+```
+```{r}
+plot(x, col=cutree(hc, h=6))
+```
+
+#Principal Component Analysis (PCA)
+
+The goal of PCA is to reduce the dimension of a dataset down to some smaller subset of new variables (called PCs) that are a useful based for furthur analysis, like visualization, clustering, etc.
+
+Data import
+
+Read data about crazy eacting trends in the UK and N. Ireland.
+```{r}
+url <- "https://tinyurl.com/UK-foods"
+x <- read.csv(url, row.names = 1)
+x
+```
+
+```{r}
+dim(x)
+```
+```{r}
+barplot(as.matrix(x), col=rainbow(nrow(x)))
+```
+
+
+```{r}
+barplot(as.matrix(x), beside=T, col=rainbow(nrow(x)))
+```
+
+The so-called "pairs" plot can be useful for small datasets:
+```{r}
+#rainbow(nrow(x))
+pairs(x, col=rainbow(nrow(x)), pch=20)
+```
+So the paris plot is useful for small datasets but it  can be lots of work to interpret and get untractable for larger datasets. 
+
+So PCA to the rescue...
+
+The main function to do PCA in base R is called 'prcomp()' This function wants the transpose of our data in this case
+
+```{r}
+pca <- prcomp(t(x))
+summary(pca)
+```
+
+```{r}
+attributes(pca)
+```
+```{r}
+pca$x
+```
+
+A major PCA result viz is called a "PCA plot" (a.k.a. a score plot, biplot, PC1 vs. PC2 plot, ordienation plot)
+
+```{r}
+mycols <- c("orange", "red", "blue", "darkgreen")
+plot(pca$x[, 1], pca$x[,2], col=mycols, pch=16,
+     xlab="PC1", ylab="PC2" )
+abline(h=0, col="gray")
+abline(v=0, col="gray")
+```
+
+Another important output from PCA is called the "loadings" vector or the "rotation" component -this tell us how much the original variables (the food in this case) contributes to the new PCs
+
+```{r}
+pca$rotation
+```
+PCA looks to be a super useful method for gaining some insight into high dimensional data that is difficult to examine in other ways.
+
+PCA of RNA-seq data
+
+```{r}
+url2 <- "https://tinyurl.com/expression-CSV"
+rna.data <- read.csv(url2, row.names=1)
+head(rna.data)
+```
+```{r}
+pca <- prcomp(t(rna.data), scale=TRUE)
+plot(pca$x[,1], pca$x[,2], xlab="PC1", ylab="PC2")
+```
+
+```{r}
+summary(pca)
+```
+```{r}
+kmeans(pca$x[,1], centers = 2)
+```
+
+
+
+```{r}
+## A vector of colors for wt and ko samples
+colvec <- colnames(rna.data)
+colvec[grep("wt", colvec)] <- "red"
+colvec[grep("ko", colvec)] <- "blue"
+
+plot(pca$x[,1], pca$x[,2], col=colvec, pch=16,
+     xlab=paste0("PC1 (", pca.var.per[1], "%)"),
+     ylab=paste0("PC2 (", pca.var.per[2], "%)"))
+
+text(pca$x[,1], pca$x[,2], labels = colnames(rna.data), pos=c(rep(4,5), rep(2,5)))
+```
+
